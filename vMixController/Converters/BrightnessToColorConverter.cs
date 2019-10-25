@@ -13,6 +13,8 @@ namespace vMixController.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
+            if (value == null)
+                return Brushes.Black;
             var clr = ((Color)value);
             var Y = 0.2126 * (clr.R / 255f) + 0.7152 * (clr.G / 255f) + 0.0722 * (clr.B / 255f);
             if (Y >= 0.5f)

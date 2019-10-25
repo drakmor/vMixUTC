@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Xml.Serialization;
 using vMixController.Classes;
 using vMixController.Widgets;
 
@@ -28,8 +30,54 @@ namespace vMixController.PropertiesControls
         public ScriptControl()
         {
             InitializeComponent();
+            Commands.CollectionChanged += Commands_CollectionChanged;
         }
 
+        private void Commands_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            RearrangeCommnads();
+        }
+
+        private void RearrangeCommnads()
+        {
+            var ident = 0;
+            foreach (var icmd in Commands)
+            {
+                icmd.PropertyChanged -= Icmd_PropertyChanged;
+                icmd.PropertyChanged += Icmd_PropertyChanged;
+                IsInputExist(icmd);
+                if (icmd.Action.IsBlock)
+                {
+                    icmd.Ident = new Thickness(ident, 0, 0, 0);
+                    ident += 8;
+                    continue;
+                }
+                if (icmd.Action.Function == NativeFunctions.CONDITIONEND)
+                    ident -= 8;
+
+                if (ident < 0) ident = 0;
+
+                icmd.Ident = new Thickness(ident, 0, 0, 0);
+
+            }
+        }
+
+        private void Icmd_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "InputKey")
+            {
+                var s = (sender as vMixControlButtonCommand);
+                IsInputExist(s);
+            }
+        }
+
+        private void IsInputExist(vMixControlButtonCommand s)
+        {
+            var key = s.InputKey;
+            var l = (ViewModel.ViewModelLocator)TryFindResource("Locator");
+            var check = !l.WidgetSettings.Model?.Inputs.Select(x => x.Key).Contains(key);
+            s.NoInputAssigned = check ?? true;
+        }
 
 
         /// <summary>
@@ -77,6 +125,7 @@ namespace vMixController.PropertiesControls
                     p =>
                     {
                         Commands.Remove(p);
+                        RearrangeCommnads();
                         //CollectionViewSource.GetDefaultView(script.ItemsSource)?.Refresh();
                     }));
             }
@@ -99,7 +148,100 @@ namespace vMixController.PropertiesControls
                         for (int i = 0; i < 10; i++)
                             cmd.AdditionalParameters.Add(new One<string>() { A = "" });
                         Commands.Add(cmd);
+                        RearrangeCommnads();
                         //CollectionViewSource.GetDefaultView(script.ItemsSource)?.Refresh();
+                    }));
+            }
+        }
+
+
+        private RelayCommand _exportScriptCommand;
+
+        /// <summary>
+        /// Gets the ExportScriptCommand.
+        /// </summary>
+        public RelayCommand ExportScriptCommand
+        {
+            get
+            {
+                return _exportScriptCommand
+                    ?? (_exportScriptCommand = new RelayCommand(
+                    () =>
+                    {
+                        Ookii.Dialogs.Wpf.VistaSaveFileDialog opendlg = new Ookii.Dialogs.Wpf.VistaSaveFileDialog
+                        {
+                            Filter = "UTC Script File|*.usf",
+                            DefaultExt = "usf"
+                        };
+                        var result = opendlg.ShowDialog(App.Current.Windows.OfType<vMixWidgetSettingsView>().FirstOrDefault());
+                        if (result.HasValue && result.Value)
+                        {
+                            XmlSerializer s = new XmlSerializer(typeof(ObservableCollection<vMixControlButtonCommand>));
+                            using (var fs = new FileStream(opendlg.FileName, FileMode.Create))
+                                s.Serialize(fs, Commands);
+                        }
+                    }));
+            }
+        }
+
+        private RelayCommand _importScriptCommand;
+
+        /// <summary>
+        /// Gets the ImportScriptCommand.
+        /// </summary>
+        public RelayCommand ImportScriptCommand
+        {
+            get
+            {
+                return _importScriptCommand
+                    ?? (_importScriptCommand = new RelayCommand(
+                    () =>
+                    {
+                        Ookii.Dialogs.Wpf.VistaOpenFileDialog opendlg = new Ookii.Dialogs.Wpf.VistaOpenFileDialog
+                        {
+                            Filter = "UTC Script File|*.usf",
+                            DefaultExt = "usf"
+                        };
+                        var result = opendlg.ShowDialog(App.Current.Windows.OfType<vMixWidgetSettingsView>().FirstOrDefault());
+                        if (result.HasValue && result.Value)
+                        {
+                            try
+                            {
+                                XmlSerializer s = new XmlSerializer(typeof(ObservableCollection<vMixControlButtonCommand>));
+                                using (var fs = new FileStream(opendlg.FileName, FileMode.Open))
+                                {
+                                    var temp = (ObservableCollection<vMixControlButtonCommand>)s.Deserialize(fs);
+                                    Commands.Clear();
+                                    foreach (var item in temp)
+                                    {
+                                        Commands.Add(item);
+                                    }
+                                }
+                                RearrangeCommnads();
+                            }
+                            catch (Exception e)
+                            {
+                                
+                            }
+                        }
+                    }));
+            }
+        }
+
+        private RelayCommand _clearScriptCommand;
+
+        /// <summary>
+        /// Gets the ClearScriptCommand.
+        /// </summary>
+        public RelayCommand ClearScriptCommand
+        {
+            get
+            {
+                return _clearScriptCommand
+                    ?? (_clearScriptCommand = new RelayCommand(
+                    () =>
+                    {
+                        Commands.Clear();
                     }));
             }
         }
@@ -120,6 +262,7 @@ namespace vMixController.PropertiesControls
                         var idx = Commands.IndexOf(p);
                         Commands.Move(idx, idx - 1 >= 0 ? idx - 1 : idx);
                         CollectionViewSource.GetDefaultView(script.ItemsSource)?.Refresh();
+                        RearrangeCommnads();
                     }));
             }
         }
@@ -129,8 +272,7 @@ namespace vMixController.PropertiesControls
         public event PropertyChangedEventHandler PropertyChanged;
         internal void RaisePropertyChanged(string property)
         {
-            if (PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(property));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
         }
         /// <summary>
         /// Gets the MoveCommandDownCommand.
@@ -145,6 +287,7 @@ namespace vMixController.PropertiesControls
                     {
                         var idx = Commands.IndexOf(p);
                         Commands.Move(idx, idx + 1 < Commands.Count ? idx + 1 : idx);
+                        RearrangeCommnads();
                     }));
             }
         }

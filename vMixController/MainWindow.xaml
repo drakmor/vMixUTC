@@ -80,6 +80,11 @@
                         <TextBlock FontFamily="/vMixControllerSkin;Component/#FontAwesome">&#xF005;</TextBlock>
                     </MenuItem.Icon>
                 </MenuItem>
+                <MenuItem x:Name="Slider" Command="{Binding CreateWidgetCommand}" CommandParameter="Slider" Header="{e:Localize Slider}">
+                    <MenuItem.Icon>
+                        <TextBlock FontFamily="/vMixControllerSkin;Component/#FontAwesome">&#xF1DE;</TextBlock>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem x:Name="TextField" Command="{Binding CreateWidgetCommand}" CommandParameter="TextField" Header="{e:Localize Text Field}">
                     <MenuItem.Icon>
                         <TextBlock FontFamily="/vMixControllerSkin;Component/#Material Design Icons">&#xF60E;</TextBlock>
@@ -90,6 +95,11 @@
                         <TextBlock FontFamily="/vMixControllerSkin;Component/#Material Design Icons">&#xF51B;</TextBlock>
                     </MenuItem.Icon>
                 </MenuItem>
+                <!--<MenuItem x:Name="Timecode" Command="{Binding CreateWidgetCommand}" CommandParameter="Timecode" Header="{e:Localize Timecode}">
+                    <MenuItem.Icon>
+                        <TextBlock FontFamily="/vMixControllerSkin;Component/#Material Design Icons">&#xF150;</TextBlock>
+                    </MenuItem.Icon>
+                </MenuItem>-->
                 <MenuItem x:Name="Clock" Command="{Binding CreateWidgetCommand}" CommandParameter="Clock" Header="{e:Localize Clock}">
                     <MenuItem.Icon>
                         <TextBlock FontFamily="/vMixControllerSkin;Component/#Material Design Icons">&#xF150;</TextBlock>
@@ -162,6 +172,12 @@
         <i:EventTrigger EventName="PreviewKeyUp">
             <cmd:EventToCommand Command="{Binding PreviewKeyUpCommand}" PassEventArgsToCommand="True"/>
         </i:EventTrigger>
+        <i:EventTrigger EventName="PreviewMouseDown">
+            <cmd:EventToCommand Command="{Binding PreviewMouseDown}" PassEventArgsToCommand="True"/>
+        </i:EventTrigger>
+        <i:EventTrigger EventName="PreviewMouseUp">
+            <cmd:EventToCommand Command="{Binding PreviewMouseUp}" PassEventArgsToCommand="True"/>
+        </i:EventTrigger>
         <i:EventTrigger EventName="Closing">
             <cmd:EventToCommand Command="{Binding ClosingCommand}"/>
         </i:EventTrigger>
@@ -198,6 +214,11 @@
                         <TextBlock FontFamily="/vMixControllerSkin;Component/#FontAwesome">&#xF05A;</TextBlock>
                     </MenuItem.Icon>
                 </MenuItem>
+                <!--<MenuItem Command="{Binding ReportBugCommand}" Header="{e:Localize Report a bug}">
+                    <MenuItem.Icon>
+                        <TextBlock FontFamily="/vMixControllerSkin;Component/#FontAwesome">&#xF188;</TextBlock>
+                    </MenuItem.Icon>
+                </MenuItem>-->
                 <Separator/>
                 <MenuItem Command="{Binding ExitCommand}"  Header="{e:Localize Exit}">
                     <MenuItem.Icon>
@@ -214,7 +235,7 @@
                 </MenuItem.ItemContainerStyle>
 
             </MenuItem>
-            <MenuItem ToolTip="{e:Localize Lock widgets}" Header="{Binding WindowSettings.Locked}" Command="{Binding ToggleLockCommand}">
+            <MenuItem ToolTip="{e:Localize Click \= Lock widgets\, Shift+Click \= Lock with password}" Header="{Binding WindowSettings.Locked}" Command="{Binding ToggleLockCommand}">
                 <MenuItem.HeaderTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">

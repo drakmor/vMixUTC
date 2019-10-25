@@ -14,6 +14,9 @@ namespace vMixAPI
     {
         [XmlAttribute("number")]
         public int Number { get; set; }
+
+        [XmlAttribute("preview")]
+        public bool Preview { get; set; }
         [XmlText()]
         public string ActiveInput
         {
@@ -47,8 +50,7 @@ namespace vMixAPI
         public event PropertyChangedEventHandler PropertyChanged;
         protected void RaisePropertyChanged(string property)
         {
-            if (PropertyChanged != null)
-                PropertyChanged(this, new PropertyChangedEventArgs(property));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
         }
     }
 }
